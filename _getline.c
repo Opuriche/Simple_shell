@@ -1,62 +1,67 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include "shell.h"
 
-#define MAX_LINE 256
 /**
  * _getline - implements a custom getline function
- * @in_line: input line
  * @buf_size: buffer size
- * @fd: file descriptor
- * Return: the string
+ * @buffer: the buffer
+ * Return: the result
  */
 
-ssize_t _getline(char **in_line, size_t *buf_size, int fd)
+#define MAX_LEN 1000
+#define MAX_ARGS 100
+
+ssize_t _getline(char *buffer, size_t buf_size)
 {
-	char *curr_pos;
-	char curr_char;
+	static char in_buf[MAX_LEN];
+	static size_t buf_idx;
+	static ssize_t bytes_read;
+	size_t j;
 
-	if (in_line == NULL || buf_size == NULL)
+	if (buf_idx == 0)
 	{
-		return (-1);
-	}
-
-	if (*in_line == NULL)
-	{
-		*buf_size = MAX_LINE;
-		*in_line = (char *)malloc(*buf_size);
-		if (*in_line == NULL)
+		bytes_read = read(STDIN_FILENO, in_buf, MAX_LEN);
+		if (bytes_read <= 0)
 		{
 			return (-1);
 		}
 	}
 
-	curr_pos = *in_line;
-
-	while (1)
+	for (j = 0; j < buf_size - 1 && buf_idx < (size_t)bytes_read; j++, buf_idx++)
 	{
-		ssize_t bytes_read = read(fd, &curr_char, 1);
-
-		if (bytes_read == -1)
+		if (in_buf[buf_idx] == '\n')
 		{
-			return (-1);
+			buffer[j] = '\0';
+			buf_idx++;
+			return (j + 1);
 		}
-
-		if (bytes_read == 0 || curr_char == '\n')
-		{
-			*curr_pos = '\0';
-			break;
-		}
-
-		*curr_pos = curr_char;
-		curr_pos++;
-
-		if ((size_t)(curr_pos - *in_line) >= *buf_size - 1)
-		{
-			break;
-		}
+		buffer[j] = in_buf[buf_idx];
 	}
 
-	return ((ssize_t)(curr_pos - *in_line));
+	buffer[j] = '\0';
+
+	return (j);
 }
 
+/**
+ * tfer_input - tokenizes input to arguments
+ * @input: input
+ * @args: arguments
+ * Return: the count
+ */
+
+int tfer_input(char *input, char *args[])
+{
+	int argcnt = 0;
+	char *token = strtok(input, " \t\n");
+
+	while (token != NULL && argcnt < MAX_ARGS - 1)
+	{
+		args[argcnt] = token;
+		argcnt++;
+		token = strtok(NULL, " \t\n");
+	}
+
+	args[argcnt] = NULL;
+
+	return (argcnt);
+}

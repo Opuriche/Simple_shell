@@ -14,4 +14,6 @@ int simple(int n1, int n2);
 void freedom(char **args);
 void execute(char *str, char *argv[]);
 int main(int argc, char *argv[]);
+ssize_t _getline(char *buffer, size_t buf_size);
+int tfer_input(char *input, char *args[]);
 #endif
